@@ -72,6 +72,8 @@ jNode* getjNode (char* str) {
 	return node;
 }
 void freejNode (jNode* node) {
+	if (node == NULL)
+		return;
 	*node->contents = NULL; // node->contents->holder
 	switch (node->type) {
 		case jSTRING:
@@ -327,8 +329,11 @@ jString* getjString(jNode* node) {
 	return string;
 }
 void freejString(jString* string) {
+	if (string->holder != NULL) {
+		freejNode(string->holder);
+		return;
+	}
 	free(string->chars);
-	free(string->holder);
 	free(string);
 }
 
@@ -356,7 +361,10 @@ jNumber* getjNumber(jNode* node) {
 	return number;
 }
 void freejNumber(jNumber* number) {
-	free(number->holder);
+	if (number->holder != NULL) {
+		freejNode(number->holder);
+		return;
+	}
 	free(number);
 }
 char* findNextComma (char* start, char* end) {
@@ -422,10 +430,34 @@ jArray* getjArray(jNode* node) {
 	return array;
 }
 void freejArray(jArray* array) {
+	if (array->holder != NULL) {
+		freejNode(array->holder);
+		return;
+	}
 	for (int i = 0; i < array->size; i++)
 		freejNode(array->elements[i]);
-	free(array->holder);
+	free(array->elements);
 	free(array);
+}
+char* findNextColon (char* start, char* end) {
+	int inString = 0, cbCount = 0, sbCount = 0;
+	for (char* cur = start; cur < end; cur += 1) {
+		if (*cur == '\0')
+			return NULL;
+		else if (*cur == '"')
+			inString = !inString;
+		else if (*cur == '[' && !inString)
+			sbCount++;
+		else if (*cur == ']' && !inString)
+			sbCount--;
+		else if (*cur == '{' && !inString)
+			cbCount++;
+		else if (*cur == '}' && !inString)
+			cbCount--;
+		else if (*cur == ':' && !inString && !cbCount && !sbCount)
+			return cur;
+	}
+	return NULL;
 }
 jObject* getjObject(jNode* node) {
 	if (node->contents != NULL)
@@ -433,10 +465,54 @@ jObject* getjObject(jNode* node) {
 	jObject* object = malloc(sizeof(*object));
 	node->contents = (void**)object;
 	object->holder = node;
+	int colonCount = 0;
+	char* cur = findNextColon(node->rawdata + 1, node->rawdata + node->datalen);
+	while (cur != NULL) {
+		colonCount++;
+		cur = findNextColon(cur + 1, node->rawdata + node->datalen);
+	}
+
+	object->size = colonCount;
+	object->keys = malloc(sizeof(*object->keys) * object->size);
+	object->values = malloc(sizeof(*object->values) * object->size);
+
+	int i = 0;
+	char* prev = node->rawdata + 1;
+	cur = findNextColon(prev, node->rawdata + node->datalen);
+	while (cur != NULL) {
+		*cur = '\0';
+		object->keys[i] = getjNode(prev);
+		*cur = ':';
+		prev = cur + 1;
+		cur = findNextComma(prev, node->rawdata + node->datalen);
+		if (cur == NULL) {
+			*(node->rawdata + node->datalen - 1) = '\0';
+			object->values[i++] = getjNode(prev);
+			*(node->rawdata + node->datalen - 1) = '}';
+			break;
+		} else {
+			*cur = '\0';
+			object->values[i++] = getjNode(prev);
+			*cur = ',';
+			prev = cur + 1;
+			cur = findNextColon(prev, node->rawdata + node->datalen);
+		}
+		
+	}
+
 	return object;
 }
 void freejObject(jObject* object) {
-	free(object->holder);
+	if (object->holder != NULL) {
+		freejNode(object->holder);
+		return;
+	}
+	for (int i = 0; i < object->size; i++) {
+		freejNode(object->keys[i]);
+		freejNode(object->values[i]);
+	}
+	free(object->keys);
+	free(object->values);
 	free(object);
 }
 void printTabs(int tabs) {
@@ -444,24 +520,27 @@ void printTabs(int tabs) {
 		printf("  ");
 }
 void printjString(jString* string, int tabs) {
-	printTabs(tabs);
+	printTabs(0);
+	// printTabs(tabs);
 	printf("\"%s\"", string->chars);
 }
 void printjNumber(jNumber* number, int tabs) {
-	printTabs(tabs);
+	printTabs(0);
+	// printTabs(tabs);
 	if (number->isInt)
 		printf("%d", number->ivalue);
 	else
 		printf("%f", number->dvalue);
 }
 void printjArray(jArray* array, int tabs) {
-	printTabs(tabs);
+	// printTabs(tabs);
 	if (array->size == 0) {
 		printf("[]");
 		return;
 	}
 	printf("[\n");
 	for (int i = 0; i < array->size; i++) {
+		printTabs(tabs + 1);
 		printjNode(array->elements[i], tabs + 1);
 		if (i < array->size - 1)
 			printf(",");
@@ -471,8 +550,21 @@ void printjArray(jArray* array, int tabs) {
 	printf("]");
 }
 void printjObject(jObject* object, int tabs) {
-	printTabs(tabs);
+	// printTabs(tabs);
+	if (object->size == 0) {
+		printf("{}");
+		return;
+	}
 	printf("{\n");
+	for (int i = 0; i < object->size; i++) {
+		printTabs(tabs + 1);
+		printjNode(object->keys[i], tabs + 1);
+		printf(": ");
+		printjNode(object->values[i], tabs + 1);
+		if (i < object->size - 1)
+			printf(",");
+		printf("\n");
+	}
 
 	printTabs(tabs);
 	printf("}");
@@ -492,6 +584,7 @@ void printjNode(jNode* node, int tabs) {
 			break;
 		} case jOBJECT: {
 			printjObject(getjObject(node), tabs);
+			break;
 		} default: {
 			printf("Could not parse.\n");
 			break;

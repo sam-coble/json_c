@@ -41,7 +41,7 @@ typedef struct {
 
 typedef struct {
 	jNode*		holder;
-	jString** 	keys;
+	jNode** 	keys;
 	jNode** 	values;
 	int 		size;
 } jObject;
