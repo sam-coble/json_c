@@ -40,23 +40,28 @@ json_type getjNodeType (char* str) {
 		return jWHITESPACE;
 	char endHolder = *end;
 	*end = '\0';
-	if (isjString(start))
-		return jSTRING;
-	else if (isjNumber(start))
-		return jNUMBER;
-	else if (isjArray(start))
-		return jARRAY;
-	else if (isjObject(start))
-		return jOBJECT;
-	else if (isjWhitespace(start))
-		return jWHITESPACE;
-	else if (isjTrue(start))
-		return jTRUE;
-	else if (isjFalse(start))
-		return jFALSE;
-	else if (isjNull(start))
-		return jNULL;
-	return jERROR;
+	json_type ret;
+	if (isjString(start)) {
+		ret = jSTRING;
+	} else if (isjNumber(start)) {
+		ret = jNUMBER;
+	} else if (isjArray(start)) {
+		ret = jARRAY;
+	} else if (isjObject(start)) {
+		ret = jOBJECT;
+	} else if (isjWhitespace(start)) {
+		ret = jWHITESPACE;
+	} else if (isjTrue(start)) {
+		ret = jTRUE;
+	} else if (isjFalse(start)) {
+		ret = jFALSE;
+	} else if (isjNull(start)) {
+		ret = jNULL;
+	} else {
+		ret = jERROR;
+	}
+	*end = endHolder;
+	return ret;
 }
 jNode* getjNode (char* str) {
 	// printf("creating node\n");
@@ -316,6 +321,8 @@ int isjObject (char* str) {
 	return 0;
 }
 jString* getjString(jNode* node) {
+	if (node->type != jSTRING)
+		return NULL;
 	if (node->contents != NULL)
 		return (jString*)node->contents;
 	jString* string = malloc(sizeof(*string));
@@ -344,6 +351,8 @@ int containsDecimalOrExponent (char* str, int len) {
 	return 0;
 }
 jNumber* getjNumber(jNode* node) {
+	if (node->type != jNUMBER)
+		return NULL;
 	if (node->contents != NULL)
 		return (jNumber*)node->contents;
 	jNumber* number = malloc(sizeof(*number));
@@ -388,6 +397,8 @@ char* findNextComma (char* start, char* end) {
 	return NULL;
 }
 jArray* getjArray(jNode* node) {
+	if (node->type != jARRAY)
+		return NULL;
 	// printf("getting array\n");
 	if (node->contents != NULL)
 		return (jArray*)node->contents;
@@ -460,6 +471,8 @@ char* findNextColon (char* start, char* end) {
 	return NULL;
 }
 jObject* getjObject(jNode* node) {
+	if (node->type != jOBJECT)
+		return NULL;
 	if (node->contents != NULL)
 		return (jObject*)node->contents;
 	jObject* object = malloc(sizeof(*object));
