@@ -121,6 +121,7 @@ int isjNull (char* str) {
 		*str++ == 'l' &&
 		*str == '\0') ? 4 : 0;
 }
+// /-?(0|[1-9]\d*)(\.\d+)?([eE][\+\-]?\d+)?/
 int isjNumber (char* str) {
 	char* start = str;
 	if (*str == '-')
@@ -158,6 +159,7 @@ int isjNumber (char* str) {
 
 	return 0;
 }
+// /"(.|\\["\\/bfnrt])*"/
 int isjString (char* str) {
 	char* start = str;
 	if (*str != '"')
