@@ -47,35 +47,35 @@ typedef struct {
 } jObject;
 
 
-int	isjWhitespace		(char*	str);
-int	isjString			(char*	str);
-int	isjNumber			(char*	str);
-int	isjArray			(char*	str);
-int	isjObject			(char*	str);
-int	isjTrue				(char*	str);
-int	isjFalse			(char*	str);
-int	isjNull				(char*	str);
+int 	isjWhitespace	(char*	str);
+int 	isjString    	(char*	str);
+int 	isjNumber    	(char*	str);
+int 	isjArray     	(char*	str);
+int 	isjObject    	(char*	str);
+int 	isjTrue      	(char*	str);
+int 	isjFalse     	(char*	str);
+int 	isjNull      	(char*	str);
 
-jNode*		getjNode	(char*	node);
-jString*	getjString 	(jNode*	node);
+jNode*  	getjNode	(char*	node);
+jString*	getjString	(jNode*	node);
 jNumber*	getjNumber	(jNode*	node);
-jArray*		getjArray	(jNode*	node);
+jArray* 	getjArray	(jNode*	node);
 jObject*	getjObject	(jNode*	node);
 
-void	printjNode		(jNode*	node,	inttabs);
+void	printjNode  	(jNode*	node,	inttabs);
 void	printjString	(jString*	string,	inttabs);
 void	printjNumber	(jNumber*	number,	inttabs);
-void	printjArray		(jArray*	array,	inttabs);
+void	printjArray 	(jArray*	array,	inttabs);
 void	printjObject	(jObject*	object,	inttabs);
 
-void	freejNode		(jNode*		node);
+void	freejNode  		(jNode*		node);
 void	freejString		(jString*	node);
 void	freejNumber		(jNumber*	node);
-void	freejArray		(jArray*	node);
+void	freejArray 		(jArray*	node);
 void	freejObject		(jObject*	node);
 
-int	isCharWhitespace	(char	ch);
-char*	firstNonSpace	(char*	str);
-char*	firstEndSpace	(char*	str);
+int  	isCharWhitespace	(char	ch);
+char*	firstNonSpace   	(char*	str);
+char*	firstEndSpace   	(char*	str);
 
 #endif
